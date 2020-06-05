@@ -5,21 +5,27 @@ import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import SendIcon from '@material-ui/icons/Send';
-import CrewList from './CrewList';
+import CrewCard from './CrewCard';
+import FormErrors from './FormErrors';
+import APIConnectorService from '../services/APIConnectorService';
 
 export default class SearchForm extends React.PureComponent {
   static propTypes = {
     ymaps: PropTypes.object,
     geoObjInfo: PropTypes.object,
     geoObjInfoUpstream: PropTypes.func,
-    crewList: PropTypes.array.isRequired
+    crewList: PropTypes.array
   };
 
   constructor(props) {
     super(props);
     this.state = {
       isAddressValid: false,
-      isYandexAPIReady: false
+      isYandexAPIReady: false,
+      formErrors: { 
+        adressInput: 'Адрес указан неверно.'
+      },
+      formValid: true
     };
     this.addressInput = React.createRef();
     this.geocode = this.geocode.bind(this);
@@ -27,12 +33,13 @@ export default class SearchForm extends React.PureComponent {
 
   componentDidUpdate(prevProps) {
     console.log('SearchForm, componentDidUpdate');
+    
     const geoObjInfo = this.props.geoObjInfo;
     let shouldInputValueUpdate = true;
 
     if (this.props.ymaps) {
       if (!this.state.isYandexAPIReady) {
-        this.setState({isYandexAPIReady: true});
+        this.setState({ isYandexAPIReady: true });
       }
     }
 
@@ -48,7 +55,10 @@ export default class SearchForm extends React.PureComponent {
         // В state компонента будет храниться признак валидности координат метки на карте.
         // Но управлять содержимым поля ввода адреса будем через ref.
         this.addressInput.current.value = address;
-        this.setState({isYandexAPIReady: true, isAddressValid: geoObjInfo.isValid});
+
+        let errInfo = geoObjInfo.isValid ? '' : 'Адрес указан неверно.';
+
+        this.setState({ isYandexAPIReady: true, isAddressValid: geoObjInfo.isValid, formValid: true, formErrors: {adressInput: errInfo} });
       }
     }
   }
@@ -62,11 +72,13 @@ export default class SearchForm extends React.PureComponent {
       job(address).then(geoObjInfo => {
         const { coords, thoroughfare, premiseNumber, isValid } = geoObjInfo;
 
-        this.setState({isAddressValid: isValid});
+        let errInfo = isValid ? '' : 'Адрес указан неверно.';
+
+        this.setState({ isAddressValid: isValid, formValid: true, formErrors: {adressInput: errInfo} });
 
         // Метку (placemark) с валидным адресом можно нанести на карту.
         if (isValid) { 
-          this.props.geoObjInfoUpstream({coords, thoroughfare, premiseNumber, isValid});
+          this.props.geoObjInfoUpstream({ coords, thoroughfare, premiseNumber, isValid });
         }
       })
     }
@@ -119,10 +131,33 @@ export default class SearchForm extends React.PureComponent {
 
   handleSubmit = e => {
     e.preventDefault();
+    this.validateForm();
+
+    if (this.state.formValid) {
+      let options = {
+        geoObjInfo: this.props.geoObjInfo,
+        crew_id: this.props.crewList[0]
+      };
+
+      Promise.resolve( APIConnectorService.makeOrder(options) ).then( APIanswer => {
+        if (APIanswer) {
+          this.setState({ orderInfo: APIanswer });
+          console.log('Информация о заказе: ', APIanswer);
+        }
+      });
+    }
+  }
+
+  validateForm() {
+    this.setState({ formValid: this.state.isAddressValid });
   }
 
   render() {
     return (
+      <>
+      <div style={ this.state.formValid ? { display: 'none'} : { display: 'block'} }>
+        <FormErrors formErrors={this.state.formErrors} />
+      </div>
       <form onSubmit={this.handleSubmit}>
         <Box 
           display="flex" 
@@ -139,8 +174,9 @@ export default class SearchForm extends React.PureComponent {
           >
             <TextField 
               id="addressID" 
+              name="adressInput"
               label="Откуда" 
-              placeholder="Улица, номер дома" 
+              defaultValue="Улица, номер дома" 
               error={!this.state.isAddressValid} 
               helperText={this.state.isAddressValid ? "Улица, номер дома" : "Адрес не найден"} 
               inputRef={this.addressInput}
@@ -154,19 +190,22 @@ export default class SearchForm extends React.PureComponent {
             <Typography variant="body1" gutterBottom>
               Подходящий экипаж:
             </Typography>
-            <CrewList crewList={this.props.crewList}/>
+            <CrewCard crewList={this.props.crewList} />
           </Box>
           <Box p={1} boxSizing="border-box">
             <Button
               variant="contained" 
               color="primary" 
               endIcon={<SendIcon />}
+              type="submit"
+              disabled={!this.state.formValid}
             >
               Заказать
             </Button>
           </Box>
         </Box>
       </form>
+      </>
     )
   }
 }

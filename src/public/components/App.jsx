@@ -13,14 +13,11 @@ export default class App extends React.Component {
     this.state = {
       ymaps: null,
       geoObjInfo: null,
-      crewList: [
-        {id: 0, model: 'Chevrolet Lacetti', color: 'синий'},
-        {id: 0, model: 'Hyundai Solaris', color: 'белый'},
-        {id: 0, model: 'Lada Vesta', color: 'серебристый металлик'}
-      ],
+      crewList: []
     };
     this.setGeoObjectInfo = this.setGeoObjectInfo.bind(this);
     this.setYandexMapsAPI = this.setYandexMapsAPI.bind(this);
+    this.setCrewList = this.setCrewList.bind(this);
   }
   
   setGeoObjectInfo(geoObjInfo) {
@@ -29,6 +26,10 @@ export default class App extends React.Component {
 
   setYandexMapsAPI(ymaps) {
     this.setState({ymaps});
+  }
+
+  setCrewList(crewList) {
+    this.setState({crewList});
   }
 
   componentDidUpdate() {
@@ -42,7 +43,8 @@ export default class App extends React.Component {
           borderBottom={1} 
           borderColor="text.secondary" 
           color="text.primary" 
-          boxSizing="border-box"
+          boxSizing="border-box" 
+          mb={2}
         >
           <Typography variant="h6" component="h1" gutterBottom>
             Детали заказа
@@ -50,7 +52,7 @@ export default class App extends React.Component {
         </Box>
         <SearchForm 
           ymaps={this.state.ymaps} 
-          crewList={[this.state.crewList[0]]} 
+          crewList={this.state.crewList} 
           geoObjInfo={this.state.geoObjInfo} 
           geoObjInfoUpstream={this.setGeoObjectInfo}
         />
@@ -72,7 +74,8 @@ export default class App extends React.Component {
             <MapContainer 
               geoObjInfo={this.state.geoObjInfo} 
               geoObjInfoUpstream={this.setGeoObjectInfo} 
-              ymapsUpstream={this.setYandexMapsAPI}
+              ymapsUpstream={this.setYandexMapsAPI} 
+              crewListUpstream={this.setCrewList}
             />
           </Box>
           <Box width="40%" minWidth="327px" pt={1} boxSizing="border-box">

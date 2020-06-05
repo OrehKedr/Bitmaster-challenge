@@ -21,23 +21,44 @@ export default class CrewList extends React.Component {
   static propTypes = {
     crewList: PropTypes.array.isRequired
   };
+  constructor(props) {
+    super(props);
+  }
 
   render() {
-    const children = this.props.crewList.map((child, index, array) => {
-      return (
-        <React.Fragment key={child.id + child.model}>
+    let children = null;
+    const crewList = this.props.crewList;
+
+    if (crewList.length == 0) {
+      children = 
+        <React.Fragment key="no_crew">
           <ListItem>
             <ListItemAvatar>
               <Avatar>
                 <LocalTaxiIcon />
               </Avatar>
             </ListItemAvatar>
-            <ListItemText primary={child.model} secondary={child.color} />
+            <ListItemText primary="нет достуных экипажей" secondary="цвет кузова" />
           </ListItem>
-          {(index === array.length - 1) ? '' : <Divider />}
         </React.Fragment>
-      );
-    });
+    } else {
+      children = crewList.map((child, index, array) => {
+        return (
+          <React.Fragment key={child.crew_id}>
+            <ListItem>
+              <ListItemAvatar>
+                <Avatar>
+                  <LocalTaxiIcon />
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText primary={child.car_model} secondary={child.car_color} />
+              <ListItemText primary={`${child.distance} м`} />
+            </ListItem>
+            {(index === array.length - 1) ? '' : <Divider />}
+          </React.Fragment>
+        );
+      });
+    }
 
     return (
       <List style={styles.list}>

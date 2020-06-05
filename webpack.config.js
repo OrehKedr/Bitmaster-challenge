@@ -5,17 +5,29 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = !isDev;
 
+const optimization = () => {
+  //Чтобы не дублировать код импортируемых библиотек
+  const config = {
+    splitChunks: {
+      chunks: 'all'
+    }
+  }
+
+  return config;
+}
+
 module.exports = {
-  context: path.resolve(__dirname, 'src'),
+  context: path.resolve(__dirname, 'src', 'public'),
   mode: 'development',
   devtool: isProd ? false : 'cheap-inline-module-source-map',
   entry: {
     app: './index.jsx',
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist/public/'),
     filename: 'app.js',
   },
+  optimization: optimization(),
   devServer: {
     port: 3300,
     hot: isDev,
@@ -24,21 +36,22 @@ module.exports = {
     }
   },
   resolve: {
-    modules: [`${__dirname}/src`, 'node_modules'],
+    modules: [`${__dirname}/src/public`, 'node_modules'],
     extensions: ['.js', '.jsx']
   },
   plugins: [
     new HTMLWebpackPlugin({
-      template: './index.html',
+      template: path.resolve(__dirname, 'src/public/index.html'),
       minify: {
         collapseWhitespace: isProd
-      }
+      },
+      excludeChunks: ['server']
     }),
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: path.resolve(__dirname, 'src/favicon.ico'),
-          to: path.resolve(__dirname, 'dist')
+          from: path.resolve(__dirname, 'src/public/favicon.ico'),
+          to: path.resolve(__dirname, 'dist/public')
         }
       ]
     })
@@ -47,7 +60,7 @@ module.exports = {
     rules: [
       {
         test: /\.(js|jsx)$/,
-        include: path.resolve(__dirname, 'src'),
+        include: path.resolve(__dirname, 'src/public'),
         loader: 'babel-loader',
         exclude: /node_modules/,
         options: {

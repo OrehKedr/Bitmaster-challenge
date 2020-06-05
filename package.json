@@ -4,9 +4,10 @@
   "description": "React + Redux + Yandex maps",
   "main": "index.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development webpack --mode development",
-    "build": "cross-env NODE_ENV=production webpack --mode production",
-    "start": "cross-env NODE_ENV=development webpack-dev-server --mode development --open"
+    "dev": "cross-env NODE_ENV=development webpack --mode development --config webpack.config.js && webpack --mode development --config server.webpack.config.js",
+    "build": "cross-env NODE_ENV=production webpack --mode production --config webpack.config.js && webpack --mode production --config server.webpack.config.js",
+    "start": "cross-env NODE_ENV=development webpack-dev-server --mode development --open",
+    "startAPI": "nodemon src/server/server.js"
   },
   "keywords": [
     "React",
@@ -23,6 +24,9 @@
     "@material-ui/icons": "^4.9.1",
     "babel-loader": "^8.1.0",
     "core-js": "^3.6.5",
+    "dateformat": "^3.0.3",
+    "express": "^4.17.1",
+    "moment": "^2.26.0",
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -39,7 +43,9 @@
     "css-loader": "^3.5.3",
     "file-loader": "^6.0.0",
     "html-webpack-plugin": "^4.3.0",
+    "nodemon": "^2.0.4",
     "style-loader": "^1.2.1",
-    "webpack-cli": "^3.3.11"
+    "webpack-cli": "^3.3.11",
+    "webpack-node-externals": "^1.7.2"
   }
 }
