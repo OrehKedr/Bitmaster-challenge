@@ -24,7 +24,7 @@ const classes = {
 
 export default class CrewCard extends React.Component {
   static propTypes = {
-    crewList: PropTypes.array
+    crewList: PropTypes.array.isRequired
   };
 
   constructor(props) {
@@ -60,4 +60,5 @@ export default class CrewCard extends React.Component {
       </Card>
     )
   }
+  
 }

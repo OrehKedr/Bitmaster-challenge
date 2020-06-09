@@ -9,12 +9,13 @@ import CrewCard from './CrewCard';
 import FormErrors from './FormErrors';
 import APIConnectorService from '../services/APIConnectorService';
 
+
 export default class SearchForm extends React.PureComponent {
   static propTypes = {
     ymaps: PropTypes.object,
     geoObjInfo: PropTypes.object,
-    geoObjInfoUpstream: PropTypes.func,
-    crewList: PropTypes.array
+    crewList: PropTypes.array.isRequired,
+    clickMap: PropTypes.func.isRequired
   };
 
   constructor(props) {
@@ -25,42 +26,11 @@ export default class SearchForm extends React.PureComponent {
       formErrors: { 
         adressInput: 'Адрес указан неверно.'
       },
-      formValid: true
+      formValid: true,
+      orderInfo: {}
     };
     this.addressInput = React.createRef();
     this.geocode = this.geocode.bind(this);
-  }
-
-  componentDidUpdate(prevProps) {
-    console.log('SearchForm, componentDidUpdate');
-    
-    const geoObjInfo = this.props.geoObjInfo;
-    let shouldInputValueUpdate = true;
-
-    if (this.props.ymaps) {
-      if (!this.state.isYandexAPIReady) {
-        this.setState({ isYandexAPIReady: true });
-      }
-    }
-
-    if (geoObjInfo) {
-      if (prevProps.geoObjInfo) {
-        shouldInputValueUpdate = (prevProps.geoObjInfo.thoroughfare !== geoObjInfo.thoroughfare) || 
-          (prevProps.geoObjInfo.premiseNumber !== geoObjInfo.premiseNumber);
-      }
-
-      if (shouldInputValueUpdate) {
-        const address = geoObjInfo.thoroughfare + ', ' + geoObjInfo.premiseNumber;
-
-        // В state компонента будет храниться признак валидности координат метки на карте.
-        // Но управлять содержимым поля ввода адреса будем через ref.
-        this.addressInput.current.value = address;
-
-        let errInfo = geoObjInfo.isValid ? '' : 'Адрес указан неверно.';
-
-        this.setState({ isYandexAPIReady: true, isAddressValid: geoObjInfo.isValid, formValid: true, formErrors: {adressInput: errInfo} });
-      }
-    }
   }
 
   handleChangeAddress = (e) => {
@@ -69,7 +39,7 @@ export default class SearchForm extends React.PureComponent {
     if (address.length > 6 && this.state.isYandexAPIReady) {
       const job = this.debounce(this.geocode, 500);
 
-      job(address).then(geoObjInfo => {
+      job(address).then( geoObjInfo => {
         const { coords, thoroughfare, premiseNumber, isValid } = geoObjInfo;
 
         let errInfo = isValid ? '' : 'Адрес указан неверно.';
@@ -78,7 +48,7 @@ export default class SearchForm extends React.PureComponent {
 
         // Метку (placemark) с валидным адресом можно нанести на карту.
         if (isValid) { 
-          this.props.geoObjInfoUpstream({ coords, thoroughfare, premiseNumber, isValid });
+          this.props.clickMap({ coords, thoroughfare, premiseNumber, isValid });
         }
       })
     }
@@ -86,7 +56,7 @@ export default class SearchForm extends React.PureComponent {
 
   // Определяем координаты по адресу (прямое геокодирование).
   async geocode(address) {
-    const ymaps = this.props.ymaps;
+    const { ymaps } = this.props;
     let coords = null,
       firstGeoObject = null,
       thoroughfare = null,
@@ -94,7 +64,7 @@ export default class SearchForm extends React.PureComponent {
       isValid = false;
 
     await ymaps.geocode(address)
-      .then(res => {
+      .then( res => {
         firstGeoObject = res.geoObjects.get(0);
         coords = firstGeoObject.geometry.getCoordinates();
 
@@ -131,9 +101,8 @@ export default class SearchForm extends React.PureComponent {
 
   handleSubmit = e => {
     e.preventDefault();
-    this.validateForm();
 
-    if (this.state.formValid) {
+    if ( this.validateForm() ) {
       let options = {
         geoObjInfo: this.props.geoObjInfo,
         crew_id: this.props.crewList[0]
@@ -142,6 +111,7 @@ export default class SearchForm extends React.PureComponent {
       Promise.resolve( APIConnectorService.makeOrder(options) ).then( APIanswer => {
         if (APIanswer) {
           this.setState({ orderInfo: APIanswer });
+          alert(`Заказ принят. Номер заказа: ${APIanswer.data.order_id} .`);
           console.log('Информация о заказе: ', APIanswer);
         }
       });
@@ -149,7 +119,40 @@ export default class SearchForm extends React.PureComponent {
   }
 
   validateForm() {
+    // При необходимости можно написать более сложную проверку.
     this.setState({ formValid: this.state.isAddressValid });
+
+    return this.state.isAddressValid;
+  }
+
+  componentDidUpdate(prevProps) {
+    const { geoObjInfo } = this.props;
+    let shouldInputValueUpdate = true;
+
+    if (this.props.ymaps) {
+      if (!this.state.isYandexAPIReady) {
+        this.setState({ isYandexAPIReady: true });
+      }
+    }
+
+    if (geoObjInfo) {
+      if (prevProps.geoObjInfo) {
+        shouldInputValueUpdate = (prevProps.geoObjInfo.thoroughfare !== geoObjInfo.thoroughfare) || 
+          (prevProps.geoObjInfo.premiseNumber !== geoObjInfo.premiseNumber);
+      }
+
+      if (shouldInputValueUpdate) {
+        const address = geoObjInfo.thoroughfare + ', ' + geoObjInfo.premiseNumber;
+
+        // В state компонента будет храниться признак валидности координат метки на карте.
+        // Но управлять содержимым поля ввода адреса будем через ref.
+        this.addressInput.current.value = address;
+
+        let errInfo = geoObjInfo.isValid ? '' : 'Адрес указан неверно.';
+
+        this.setState({ isYandexAPIReady: true, isAddressValid: geoObjInfo.isValid, formValid: true, formErrors: {adressInput: errInfo} });
+      }
+    }
   }
 
   render() {
@@ -190,7 +193,7 @@ export default class SearchForm extends React.PureComponent {
             <Typography variant="body1" gutterBottom>
               Подходящий экипаж:
             </Typography>
-            <CrewCard crewList={this.props.crewList} />
+            <CrewCard crewList={this.props.crewList}/>
           </Box>
           <Box p={1} boxSizing="border-box">
             <Button
@@ -208,4 +211,5 @@ export default class SearchForm extends React.PureComponent {
       </>
     )
   }
+
 }

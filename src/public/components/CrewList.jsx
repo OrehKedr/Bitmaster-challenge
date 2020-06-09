@@ -8,6 +8,7 @@ import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import Avatar from '@material-ui/core/Avatar';
 import LocalTaxiIcon from '@material-ui/icons/LocalTaxi';
 
+
 const styles = {
   list: {
     width: '100%',
@@ -15,7 +16,6 @@ const styles = {
     border: '1px solid rgba(0, 0, 0, 0.12)'
   }
 };
-
 
 export default class CrewList extends React.Component {
   static propTypes = {
@@ -27,7 +27,7 @@ export default class CrewList extends React.Component {
 
   render() {
     let children = null;
-    const crewList = this.props.crewList;
+    const { crewList } = this.props;
 
     if (crewList.length == 0) {
       children = 
@@ -66,4 +66,5 @@ export default class CrewList extends React.Component {
       </List>
     )
   }
+
 }

@@ -55,7 +55,7 @@ export default class APIConnectorService {
     const url = API_URL + 'order';
     await _postData(url, body).then(res => {
       if (res) {
-        orderInfo = res
+        orderInfo = JSON.parse(res)
       }
     });
 

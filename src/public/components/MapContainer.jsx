@@ -1,9 +1,10 @@
 import React from 'react';
-import Loader from './Loader';
+// import Loader from './Loader';
 import PropTypes from 'prop-types';
-import { YMaps, Map, Placemark } from 'react-yandex-maps';
+import { YMaps, Map } from 'react-yandex-maps';
 import APIConnectorService from '../services/APIConnectorService';
 import { YMAPS_KEY } from '../.env';
+
 
 const STYLE_PRESETS = {
   crew: 'islands#greenAutoIcon',
@@ -18,20 +19,21 @@ const ICON_CAPTION = {
 };
 
 export default class MapContainer extends React.Component {
+  // Все properties берём из Redux store.
   static propTypes = {
+    ymaps: PropTypes.object,
     geoObjInfo: PropTypes.object,
-    geoObjInfoUpstream: PropTypes.func.isRequired,
-    crewListUpstream: PropTypes.func.isRequired,
-    ymapsUpstream: PropTypes.func.isRequired
+    crewList: PropTypes.array.isRequired,
+    initYMAPS: PropTypes.func.isRequired,
+    clickMap: PropTypes.func.isRequired,
+    storeCrews: PropTypes.func.isRequired
   }
 
   constructor(props) {
     super(props);
     this.state = {
-      crewList: null,
       mapCenter: [56.852790, 53.211670],
     };
-    this.ymaps = null;
     this.myMap = null;    
     this.setMyMapRef = elem => {
       this.myMap = elem;
@@ -40,28 +42,24 @@ export default class MapContainer extends React.Component {
 
   handleMapClick = e => {
     const coords = e.get('coords');
-    console.log('Клик по карте, crewList', this.state.crewList);
-    this.setState({ crewList: null });
-    this.props.crewListUpstream([]);
+
+    this.props.storeCrews([]);
     
     this.getAddress(coords).then( geoObjInfo => {
-      this.props.geoObjInfoUpstream(geoObjInfo);
+      this.props.clickMap(geoObjInfo);
     });
   }
 
   handleAPIFinishedLoading = ymaps => {
-    // Сохранили ссылку на экземпляр Yandex Maps API.
-    this.ymaps = ymaps;
-
     // Подписались на событие "click" по карте.
     this.myMap.events.add('click', this.handleMapClick);
 
-    // Передали ссылку на экземпляр Yandex Maps API в корневой компонент.
-    this.props.ymapsUpstream(ymaps);
+    // Сохранили ссылку на экземпляр Yandex Maps API в Redux store.
+    this.props.initYMAPS(ymaps);
   }
 
   createPlacemark({ coords, preset }) {
-    return new this.ymaps.Placemark(coords, {
+    return new this.props.ymaps.Placemark(coords, {
       iconCaption: ICON_CAPTION[preset]
     }, {
       preset: STYLE_PRESETS[preset]
@@ -74,16 +72,16 @@ export default class MapContainer extends React.Component {
    * Параметр: isValid
    * Если геокодер посчитал координаты валидными, то true.
    */
-  putPlacemarks({ coords, isValid = true }) {
+  putPlacemarks({ coords, isValid }) {
     // 1. Добавляем метку точки посадки.
     let preset = isValid ? 'addressIsFound' : 'addressNotFound';
-
     let Placemark = this.createPlacemark({ coords, preset });
+    
     this.myMap.geoObjects.add(Placemark);
 
     // 2. Добавляем метки экипажей.
     preset = 'crew';
-    const { crewList } = this.state;
+    const { crewList } = this.props;
 
     if (crewList && isValid) {
       crewList.forEach( crew => {
@@ -104,7 +102,7 @@ export default class MapContainer extends React.Component {
 
   // Определяем адрес по координатам (обратное геокодирование).
   getAddress(coords) {
-    return this.ymaps.geocode(coords).then(res => {
+    return this.props.ymaps.geocode(coords).then(res => {
       const firstGeoObject = res.geoObjects.get(0);
 
       // Возвращает путь сообщения (улица, шоссе, проезд и т.д.), которому принадлежит топоним (если применимо).
@@ -119,10 +117,7 @@ export default class MapContainer extends React.Component {
     })
   }
   
-  
   componentDidUpdate(prevProps) {
-    console.log('MapContainer, componentDidUpdate');
-
     const { geoObjInfo } = this.props;
     let shouldCrewListUpdate = true;
 
@@ -138,18 +133,16 @@ export default class MapContainer extends React.Component {
         if (shouldCrewListUpdate) {
           Promise.resolve( APIConnectorService.getCrews(geoObjInfo) ).then( APIanswer => {
             if (APIanswer) {
-              this.setState({ crewList: APIanswer.data.crews_info });
-              this.props.crewListUpstream(APIanswer.data.crews_info);
+              this.props.storeCrews(APIanswer.data.crews_info);
             }
           });
         }
-
-        this.putPlacemarks(geoObjInfo);
       }
-    }
-  }
 
-  
+      this.putPlacemarks(geoObjInfo);
+    }
+    
+  }
 
   render() {
     return (

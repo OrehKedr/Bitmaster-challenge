@@ -3,37 +3,13 @@ import Container from '@material-ui/core/Container';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 
-import CrewList from './CrewList';
-import SearchForm from './SearchForm';
-import MapContainer from './MapContainer';
+import MapReduxContainer from '../containers/MapReduxContainer';
+import SearchFormContainer from '../containers/SearchFormContainer';
+import CrewListContainer from '../containers/CrewListContainer';
 
-export default class App extends React.Component {
+export class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      ymaps: null,
-      geoObjInfo: null,
-      crewList: []
-    };
-    this.setGeoObjectInfo = this.setGeoObjectInfo.bind(this);
-    this.setYandexMapsAPI = this.setYandexMapsAPI.bind(this);
-    this.setCrewList = this.setCrewList.bind(this);
-  }
-  
-  setGeoObjectInfo(geoObjInfo) {
-    this.setState({geoObjInfo});
-  }
-
-  setYandexMapsAPI(ymaps) {
-    this.setState({ymaps});
-  }
-
-  setCrewList(crewList) {
-    this.setState({crewList});
-  }
-
-  componentDidUpdate() {
-    console.log('App componentDidUpdate');
   }
 
   render() {
@@ -50,12 +26,7 @@ export default class App extends React.Component {
             Детали заказа
           </Typography>
         </Box>
-        <SearchForm 
-          ymaps={this.state.ymaps} 
-          crewList={this.state.crewList} 
-          geoObjInfo={this.state.geoObjInfo} 
-          geoObjInfoUpstream={this.setGeoObjectInfo}
-        />
+        <SearchFormContainer />
         <Box 
           display="flex" 
           flexDirection="row" 
@@ -71,15 +42,10 @@ export default class App extends React.Component {
             pt={1} 
             boxSizing="border-box"
           >
-            <MapContainer 
-              geoObjInfo={this.state.geoObjInfo} 
-              geoObjInfoUpstream={this.setGeoObjectInfo} 
-              ymapsUpstream={this.setYandexMapsAPI} 
-              crewListUpstream={this.setCrewList}
-            />
+            <MapReduxContainer />
           </Box>
           <Box width="40%" minWidth="327px" pt={1} boxSizing="border-box">
-            <CrewList crewList={this.state.crewList} />
+            <CrewListContainer />
           </Box>
         </Box>
       </Container>

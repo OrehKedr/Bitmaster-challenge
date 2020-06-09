@@ -1,4 +1,4 @@
-# React + Yandex maps
+# React + Redux + Yandex maps  
 
 ## Описание
 Имитация клиента сервиса заказа такси.  
