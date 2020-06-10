@@ -7,6 +7,7 @@ import Button from '@material-ui/core/Button';
 import SendIcon from '@material-ui/icons/Send';
 import CrewCard from './CrewCard';
 import FormErrors from './FormErrors';
+import Modal from './Modal';
 import APIConnectorService from '../services/APIConnectorService';
 
 
@@ -26,11 +27,13 @@ export default class SearchForm extends React.PureComponent {
       formErrors: { 
         adressInput: 'Адрес указан неверно.'
       },
-      formValid: true,
+      isFormValid: true,
+      isModalOpen: false,
       orderInfo: {}
     };
     this.addressInput = React.createRef();
     this.geocode = this.geocode.bind(this);
+    this.toggleModalOpen = this.toggleModalOpen.bind(this);
   }
 
   handleChangeAddress = (e) => {
@@ -44,7 +47,7 @@ export default class SearchForm extends React.PureComponent {
 
         let errInfo = isValid ? '' : 'Адрес указан неверно.';
 
-        this.setState({ isAddressValid: isValid, formValid: true, formErrors: {adressInput: errInfo} });
+        this.setState({ isAddressValid: isValid, isFormValid: true, formErrors: {adressInput: errInfo} });
 
         // Метку (placemark) с валидным адресом можно нанести на карту.
         if (isValid) { 
@@ -110,9 +113,7 @@ export default class SearchForm extends React.PureComponent {
 
       Promise.resolve( APIConnectorService.makeOrder(options) ).then( APIanswer => {
         if (APIanswer) {
-          this.setState({ orderInfo: APIanswer });
-          alert(`Заказ принят. Номер заказа: ${APIanswer.data.order_id} .`);
-          console.log('Информация о заказе: ', APIanswer);
+          this.setState({ orderInfo: APIanswer, isModalOpen: true });
         }
       });
     }
@@ -120,9 +121,14 @@ export default class SearchForm extends React.PureComponent {
 
   validateForm() {
     // При необходимости можно написать более сложную проверку.
-    this.setState({ formValid: this.state.isAddressValid });
+    this.setState({ isFormValid: this.state.isAddressValid });
 
     return this.state.isAddressValid;
+  }
+
+  toggleModalOpen() {
+    const { isModalOpen } = this.state;
+    this.setState({ isModalOpen: !isModalOpen });
   }
 
   componentDidUpdate(prevProps) {
@@ -150,7 +156,7 @@ export default class SearchForm extends React.PureComponent {
 
         let errInfo = geoObjInfo.isValid ? '' : 'Адрес указан неверно.';
 
-        this.setState({ isYandexAPIReady: true, isAddressValid: geoObjInfo.isValid, formValid: true, formErrors: {adressInput: errInfo} });
+        this.setState({ isYandexAPIReady: true, isAddressValid: geoObjInfo.isValid, isFormValid: true, formErrors: {adressInput: errInfo} });
       }
     }
   }
@@ -158,7 +164,7 @@ export default class SearchForm extends React.PureComponent {
   render() {
     return (
       <>
-      <div style={ this.state.formValid ? { display: 'none'} : { display: 'block'} }>
+      <div style={ this.state.isFormValid ? { display: 'none'} : { display: 'block'} }>
         <FormErrors formErrors={this.state.formErrors} />
       </div>
       <form onSubmit={this.handleSubmit}>
@@ -201,13 +207,14 @@ export default class SearchForm extends React.PureComponent {
               color="primary" 
               endIcon={<SendIcon />}
               type="submit"
-              disabled={!this.state.formValid}
+              disabled={!this.state.isFormValid}
             >
               Заказать
             </Button>
           </Box>
         </Box>
       </form>
+      { this.state.isModalOpen && (<Modal orderID={this.state.orderInfo.data.order_id} toggleOpen={this.toggleModalOpen}/>) }
       </>
     )
   }
