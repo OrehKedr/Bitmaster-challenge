@@ -44,7 +44,12 @@ export class App extends React.Component {
           >
             <MapReduxContainer />
           </Box>
-          <Box width="40%" minWidth="327px" pt={1} boxSizing="border-box">
+          <Box 
+            width="40%" 
+            minWidth="327px" 
+            pt={1} 
+            boxSizing="border-box"
+          >
             <CrewListContainer />
           </Box>
         </Box>

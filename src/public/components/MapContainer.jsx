@@ -1,5 +1,5 @@
 import React from 'react';
-// import Loader from './Loader';
+import Loader from './Loader';
 import PropTypes from 'prop-types';
 import { YMaps, Map } from 'react-yandex-maps';
 import APIConnectorService from '../services/APIConnectorService';
@@ -152,14 +152,14 @@ export default class MapContainer extends React.Component {
         load: 'Map,Placemark,GeoObject,geocode',
         apikey: YMAPS_KEY
       }}>
+        {this.props.ymaps ? (<> </>) : <Loader />}
         <Map 
           defaultState={{ center: this.state.mapCenter, zoom: 10 }} 
-          width="490" 
+          width="490px" 
           height="320px"
           instanceRef={this.setMyMapRef}
           onLoad={this.handleAPIFinishedLoading}
-        >
-        </Map> 
+        />
       </YMaps>
     )
   }
